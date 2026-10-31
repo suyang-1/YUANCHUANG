@@ -36,8 +36,54 @@ npm run dev
 
 迁移脚本可重复执行。若数据库已有业务数据，执行前仍建议先备份。执行后可在 Supabase Table Editor 检查表结构和种子数据。仓库 CI 只验证代码类型和生产构建，不会连接或修改你的 Supabase 项目。
 
-## 当前交付边界
-当前版本先建立可运行的前端工程底座与主要页面交互。页面展示数据为明确的演示数据；未配置 Supabase 时不会伪装成真实云端账号或数据库。配置 Supabase 环境变量并完成 SQL 初始化后，再逐步启用真实认证、数据读写和文件存储。
+## 当前功能与数据边界
+
+已接入 Supabase 数据持久化的模块：
+- 账号认证与个人资料：登录态、个人资料读取和编辑。
+- 项目管理：个人项目的新建、编辑、删除和列表读取。
+- 职业成长路径：成长规划、阶段任务读取与完成状态更新。
+- 知识图谱：知识节点/关系读取，个人能力自评保存与回读。
+- 学习资源：个人收藏、移除收藏。
+- 学习记录：学习主题、类型、时长和备注记录。
+
+仍以演示内容或静态内容为主的部分：
+- 首页社区动态、推荐岗位及部分统计图表。
+- 作品展示区的作品上传、编辑、公开分享。
+- 资源社区的真实用户投稿与互动。
+- 部分页面中的推荐案例、图表样例和视觉占位内容。
+
+未配置 Supabase 时，应用保留演示模式；演示模式中的本地状态不会跨设备持久化。GitHub Actions 负责依赖审计、TypeScript 类型检查和 Next.js 生产构建，不会代替真实 Supabase 项目验证。
+
+## Vercel 部署与自定义域名
+
+### 1. 部署前需要准备
+- 一个 Supabase 项目。
+- 一个 Vercel 账号，并授权访问本 GitHub 仓库。
+- 两个 Supabase 公共环境变量：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`。
+- 如果使用自定义域名，准备好域名管理平台的 DNS 修改权限。
+
+### 2. 初始化 Supabase
+在 Supabase Dashboard → SQL Editor 中，按上方“Supabase 初始化”顺序执行三份迁移。然后在 Authentication → URL Configuration 中设置：
+- Site URL：先填 Vercel 分配的正式域名，例如 `https://your-project.vercel.app`。
+- Redirect URLs：添加 `https://your-project.vercel.app/auth/callback`，本地开发时可另加 `http://localhost:3000/auth/callback`。
+
+### 3. 部署到 Vercel
+1. 在 Vercel 中导入 `suyang-1/YUANCHUANG` 仓库。
+2. Framework Preset 选择 Next.js，Build Command 使用 `npm run build`，其余保持默认。
+3. 在 Project → Settings → Environment Variables 中配置上述两个 Supabase 环境变量，至少勾选 Production；建议 Preview 也配置测试环境变量。
+4. 点击 Deploy。之后推送到 `main` 的提交会触发生产部署。
+
+### 4. 绑定自定义域名
+在 Vercel 项目 Settings → Domains 添加你的域名，按 Vercel 显示的记录到域名服务商配置 DNS。等待 Vercel 显示域名验证成功并启用 HTTPS 后，将 Supabase Authentication 的 Site URL 和 Redirect URLs 更新为最终域名。
+
+### 5. 上线验收
+- 注册、登录、退出与邮件回调正常。
+- 两个账号之间无法读取或修改彼此的个人资料、项目、成长路径、收藏和学习记录。
+- 创建/编辑/删除数据后刷新页面仍然存在。
+- 知识图谱节点与种子数据正常显示，能力自评可保存并回读。
+- 头像存储策略、移动端布局、浏览器控制台和 Vercel 部署日志无阻断错误。
+
+注意：仓库 CI 成功只代表代码通过自动化检查，不代表已经连接真实 Supabase、完成生产环境安全验收或正式上线。不要把 Supabase service_role key 放进 `NEXT_PUBLIC_*` 变量或提交到 Git。
 
 ## UI 还原约定
 保留原设计稿的顶部导航、左侧七项菜单、白色背景、紫色强调色、浅色边框、卡片/表格布局、就业趋向气泡图、作品瀑布流与知识图谱双视图。
