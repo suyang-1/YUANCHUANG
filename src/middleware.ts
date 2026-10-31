@@ -14,4 +14,4 @@ export async function middleware(request:NextRequest){
  if(user&&isLogin){const target=request.nextUrl.clone();target.pathname="/";target.search="";return NextResponse.redirect(target);}
  return response;
 }
-export const config={matcher:["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]};
+export const config={matcher:["/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]};
