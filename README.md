@@ -26,21 +26,22 @@ npm run dev
 不要将真实密钥提交到 Git。浏览器端只使用 anon/publishable key，并依赖 RLS 控制数据权限；`service_role` key 只能放在受保护的服务端环境，当前应用不需要将它暴露给浏览器。个人资料表默认仅允许本人读取和修改。
 
 ## Supabase 初始化（新项目）
-在 Supabase Dashboard → SQL Editor 中，按顺序执行以下脚本：
+在 Supabase Dashboard → SQL Editor 中，按顺序执行以下脚本（所有 6 份迁移都要执行）：
 
 1. `supabase/migrations/20261030000000_initial_schema.sql`：创建业务表、知识图谱表、基础 RLS 策略和索引。
 2. `supabase/migrations/202610310001_auth_and_storage.sql`：创建用户资料触发器、更新时间触发器、头像存储桶和存储策略。
 3. `supabase/migrations/202610310002_seed_knowledge_graph.sql`：写入知识图谱演示节点与关系。
 4. `supabase/migrations/202610310003_portfolio_storage.sql`：创建作品图片存储桶，并限制上传、更新和删除操作只能作用于当前用户自己的目录。
 5. `supabase/migrations/202610310004_profile_identity.sql`：增加账号身份字段（学生 / 教师），并让注册资料触发器保存身份与学生专业。
+6. `supabase/migrations/202610310005_profile_portfolio_privacy.sql`：增加个人主页和作品条目的公开开关，默认保持私有，仅主动公开的资料可被其他访客读取。
 
-也可以执行 `supabase/schema.sql` 作为基础结构脚本，再执行第 2 至 5 步。不要在已经执行完整迁移后再重复执行旧版非迁移脚本；当前 schema 中的策略已加入重复执行保护。
+也可以执行 `supabase/schema.sql` 作为基础结构脚本，再执行第 2 至 6 步。不要在已经执行完整迁移后再重复执行旧版非迁移脚本；当前 schema 中的策略已加入重复执行保护。
 
 迁移脚本可重复执行。若数据库已有业务数据，执行前仍建议先备份。执行后可在 Supabase Table Editor 检查表结构和种子数据。仓库 CI 只验证代码类型和生产构建，不会连接或修改你的 Supabase 项目。
 
 ## 当前功能与数据边界
 
-已接入 Supabase 数据持久化的模块：
+已具备 Supabase 数据表与读写代码的数据模块（需先配置项目并执行迁移，才会启用云端持久化）：
 - 账号认证与个人资料：注册时选择学生或教师身份（学生可选择专业），个人资料按当前登录账号读取和编辑；个人主页能力雷达图读取知识图谱自评，成长趋势按学习记录累计时长生成，无数据时显示空状态。
 - 项目管理：个人项目的新建、编辑、删除和列表读取。
 - 职业成长路径：成长规划、阶段任务读取与完成状态更新。
@@ -50,7 +51,7 @@ npm run dev
 
 仍以演示内容或静态内容为主的部分：
 - 首页社区动态、推荐岗位及部分统计图表。
-- 作品展示区：个人作品元数据新增、编辑、删除与封面图片上传；更新或删除作品时会尝试清理旧封面文件，图片仅允许当前账号目录写入。
+- 作品展示区：个人作品元数据新增、编辑、删除与封面图片上传；更新或删除作品时会尝试清理旧封面文件，图片仅允许当前账号目录写入。注意：当前 portfolio Storage bucket 使用公开读取，作品元数据的公开开关不代表封面文件私有；不要上传敏感图片。后续需改为私有 bucket + 授权签名 URL 后，才能提供完整的私密作品集。
 - 资源社区的真实用户投稿与互动。
 - 部分页面中的推荐案例、图表样例和视觉占位内容。
 
@@ -60,7 +61,7 @@ npm run dev
 
 ### 1. 部署前准备
 - 一个腾讯云账号，并已开通 EdgeOne Pages / EdgeOne Makers。
-- 一个 Supabase 项目，已按上方顺序执行 4 份迁移。
+- 一个 Supabase 项目，已按上方顺序执行全部 6 份迁移。
 - GitHub 仓库访问授权。
 - Supabase 公共环境变量：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`。
 - 如需使用 `www.yuanchuang.ued.com`，还需要拥有 `ued.com` 的 DNS 管理权限，或请域名管理员代为添加记录。
@@ -92,7 +93,7 @@ npm run dev
 - 验证注册、登录、退出和邮件回调。
 - 验证个人资料、项目、成长路径、收藏与学习记录能在刷新后保持。
 - 使用两个不同账号验证 RLS 隔离。
-- 检查作品图片上传、移动端布局、浏览器控制台和 EdgeOne 构建日志。
+- 检查作品图片上传、公开/私有资料读取、移动端布局、浏览器控制台和 EdgeOne 构建日志。
 - GitHub Actions 成功只代表代码通过自动化检查，不代表已经连接真实 Supabase 或完成线上验收。
 
 ### 6. 安全说明
