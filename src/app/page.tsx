@@ -1,5 +1,6 @@
 "use client";
-import {useMemo,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
+import {createBrowserClient} from "@supabase/ssr";
 import {Search,Sun,Bell,MessageCircle,ChevronDown,Users,PanelsTopLeft,PenLine,ChartNoAxesColumn,HeartHandshake,BookOpen,House,UserRound,Plus,MoreHorizontal,ArrowUpRight,CalendarDays,FolderKanban,FileText,Star,Eye,Heart,MessageSquare,Share2,Filter,Grid2X2,List,Network,BriefcaseBusiness,Target,Clock3,CheckCircle2,Circle,Bookmark,Upload,Settings,LogOut,Menu,X,ChevronRight,MapPin,Layers,Lightbulb,TrendingUp} from "lucide-react";
 import {ResponsiveContainer,RadarChart,PolarGrid,PolarAngleAxis,Radar,Tooltip,AreaChart,Area,XAxis,YAxis,CartesianGrid} from "recharts";
 
@@ -96,13 +97,15 @@ function CareerPlanner({notify}:{notify:(s:string)=>void}){
 export default function Home(){
  const [section,setSection]=useState<Section>("交集");const [profileTab,setProfileTab]=useState("作品");const [graphView,setGraphView]=useState<"grid"|"list">("list");const [query,setQuery]=useState("");const [showNew,setShowNew]=useState(false);const [toast,setToast]=useState("");const [mobileNav,setMobileNav]=useState(false);
  const notify=(s:string)=>{setToast(s);setTimeout(()=>setToast(""),2400)};
+ useEffect(()=>{const url=process.env.NEXT_PUBLIC_SUPABASE_URL;const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(!url||!key)return;const supabase=createBrowserClient(url,key);supabase.auth.getUser().then(({data})=>setAccountEmail(data.user?.email??""));},[]);
+ const signOut=async()=>{const url=process.env.NEXT_PUBLIC_SUPABASE_URL;const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(url&&key){const supabase=createBrowserClient(url,key);await supabase.auth.signOut();}window.location.href="/login";};
  const filteredResources=useMemo(()=>resources.filter(r=>(r.title+r.tags.join("")).toLowerCase().includes(query.toLowerCase())),[query]);
  const title=section==="交集"?"人脉机会":section;
  return <div className="min-h-screen bg-white text-[#091335]">
   <header className="fixed inset-x-0 top-0 z-40 flex h-[45px] items-center border-b border-[#eeeaf3] bg-white/95 px-4 backdrop-blur">
    <button className="mr-8 flex w-7 items-center justify-center text-[#282332]" onClick={()=>setSection("交集")} aria-label="首页"><Layers size={19}/></button>
    <div className="hidden max-w-[430px] flex-1 items-center gap-3 text-xs text-slate-400 md:flex"><Search size={14}/><input className="w-full bg-transparent outline-none placeholder:text-slate-400" placeholder="你想找的内容都在这里" value={query} onChange={e=>setQuery(e.target.value)}/></div>
-   <div className="ml-auto flex items-center gap-3 text-slate-500"><button className="rounded-full bg-[#f7f3fc] p-1.5" onClick={()=>notify("主题设置将在后续版本开放")}><Sun size={14}/></button><button onClick={()=>notify("暂时没有新通知")}><Bell size={16}/></button><button onClick={()=>notify("消息中心将在后续版本开放")} className="relative"><MessageCircle size={16}/><i className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-rose-400"/></button><div className="hidden text-right sm:block"><div className="text-xs font-medium text-slate-700">石老师</div><div className="text-[9px] text-slate-400">用户研究教师</div></div><div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-sky-200 via-slate-500 to-slate-900 text-[10px] text-white">石</div><ChevronDown size={12}/></div>
+   <div className="ml-auto flex items-center gap-3 text-slate-500"><button className="rounded-full bg-[#f7f3fc] p-1.5" onClick={()=>notify("主题设置将在后续版本开放")}><Sun size={14}/></button><button onClick={()=>notify("暂时没有新通知")}><Bell size={16}/></button><button onClick={()=>notify("消息中心将在后续版本开放")} className="relative"><MessageCircle size={16}/><i className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-rose-400"/></button><div className="hidden text-right sm:block"><div className="text-xs font-medium text-slate-700">{accountEmail?accountEmail.split("@")[0]:"演示访客"}</div><div className="text-[9px] text-slate-400">{accountEmail||"演示数据 · 未连接账号"}</div></div><button onClick={signOut} title="退出登录" className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-[#9C88EC] to-[#8454F5] text-[10px] text-white"><LogOut size={13}/></button></div>
   </header>
   <aside className={`fixed bottom-0 left-0 top-[45px] z-30 w-[46px] border-r border-[#eeeaf3] bg-white transition-transform ${mobileNav?"translate-x-0":"-translate-x-full"} md:translate-x-0`}>
    <nav className="flex flex-col items-center pt-2">{nav.map(({name,icon:Icon})=><button key={name} onClick={()=>{setSection(name);setMobileNav(false)}} className={`flex h-[44px] w-full flex-col items-center justify-center gap-0.5 text-[9px] transition ${section===name?"bg-[#f5efff] text-[#8454F5]":"text-[#6e647b] hover:bg-[#faf8fd]"}`}><Icon size={16} strokeWidth={1.7}/>{name}</button>)}</nav>
