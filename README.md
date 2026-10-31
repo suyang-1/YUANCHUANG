@@ -7,7 +7,7 @@
 - Tailwind CSS
 - Supabase：PostgreSQL / Auth / Storage（配置后启用）
 - Recharts：数据可视化
-- Vercel：部署
+- 腾讯云 EdgeOne Pages：全栈部署（Next.js SSR / App Router）
 - npm lockfile：锁定依赖版本，CI 使用 `npm ci` 验证可复现安装
 
 ## 本地运行
@@ -55,36 +55,50 @@ npm run dev
 
 未配置 Supabase 时，应用保留演示模式；演示模式中的本地状态不会跨设备持久化。GitHub Actions 负责依赖审计、TypeScript 类型检查和 Next.js 生产构建，不会代替真实 Supabase 项目验证。
 
-## Vercel 部署与自定义域名
+## 腾讯云 EdgeOne Pages 部署与自定义域名
 
-### 1. 部署前需要准备
-- 一个 Supabase 项目。
-- 一个 Vercel 账号，并授权访问本 GitHub 仓库。
-- 两个 Supabase 公共环境变量：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`。
-- 如果使用自定义域名，准备好域名管理平台的 DNS 修改权限。
+### 1. 部署前准备
+- 一个腾讯云账号，并已开通 EdgeOne Pages / EdgeOne Makers。
+- 一个 Supabase 项目，已按上方顺序执行 4 份迁移。
+- GitHub 仓库访问授权。
+- Supabase 公共环境变量：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`。
+- 如需使用 `www.yuanchuang.ued.com`，还需要拥有 `ued.com` 的 DNS 管理权限，或请域名管理员代为添加记录。
 
-### 2. 初始化 Supabase
-在 Supabase Dashboard → SQL Editor 中，按上方“Supabase 初始化”顺序执行三份迁移。然后在 Authentication → URL Configuration 中设置：
-- Site URL：先填 Vercel 分配的正式域名，例如 `https://your-project.vercel.app`。
-- Redirect URLs：添加 `https://your-project.vercel.app/auth/callback`，本地开发时可另加 `http://localhost:3000/auth/callback`。
+### 2. 从 GitHub 导入项目
+1. 打开 [EdgeOne Pages 控制台](https://edgeone.cloud.tencent.com/pages)。
+2. 选择通过 Git 仓库创建项目，连接 GitHub，并授权访问 `suyang-1/YUANCHUANG`。
+3. 选择仓库与 `main` 分支。项目根目录保持仓库根目录。
+4. 框架选择 Next.js；构建命令使用 `npm run build`。当前项目是 Next.js 15 App Router 全栈应用，使用默认 Next.js 部署模式，不要添加 `output: "export"`，也不要将输出目录强行改为 `out`。
+5. 在构建环境变量中添加：
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+6. 开始部署，等待构建日志完成；通过 EdgeOne 分配的预览域名检查页面、登录回调和数据读写。
 
-### 3. 部署到 Vercel
-1. 在 Vercel 中导入 `suyang-1/YUANCHUANG` 仓库。
-2. Framework Preset 选择 Next.js，Build Command 使用 `npm run build`，其余保持默认。
-3. 在 Project → Settings → Environment Variables 中配置上述两个 Supabase 环境变量，至少勾选 Production；建议 Preview 也配置测试环境变量。
-4. 点击 Deploy。之后推送到 `main` 的提交会触发生产部署。
+### 3. Supabase 回调地址
+在 Supabase Dashboard → Authentication → URL Configuration 中设置：
+- Site URL：先使用 EdgeOne 分配的正式站点域名。
+- Redirect URLs：添加 `https://你的EdgeOne站点域名/auth/callback`。
+- 本地开发可另加 `http://localhost:3000/auth/callback`。
 
-### 4. 绑定自定义域名
-在 Vercel 项目 Settings → Domains 添加你的域名，按 Vercel 显示的记录到域名服务商配置 DNS。等待 Vercel 显示域名验证成功并启用 HTTPS 后，将 Supabase Authentication 的 Site URL 和 Redirect URLs 更新为最终域名。若计划使用 `www.yuanchuang.ued.com`，必须先确认你拥有 `ued.com` 的 DNS 管理权限；然后将该完整主机名添加到 Vercel Domains，并严格按 Vercel 页面给出的 DNS 记录配置，不能预先猜测 CNAME 目标。验证成功后再将 Supabase Site URL 设为 `https://www.yuanchuang.ued.com`，并添加 `https://www.yuanchuang.ued.com/auth/callback` 到 Redirect URLs。
+### 4. 绑定正式域名
+1. 在 EdgeOne Pages 项目设置中添加 `www.yuanchuang.ued.com`。
+2. 按控制台为该域名实际生成的 DNS 记录，在 `ued.com` 域名 DNS 服务商处配置；不要猜测或套用其他项目的 CNAME / TXT 值。
+3. 等待域名验证与 HTTPS 证书签发完成。
+4. 将 Supabase Site URL 更新为 `https://www.yuanchuang.ued.com`，并添加 `https://www.yuanchuang.ued.com/auth/callback` 到 Redirect URLs。
 
-### 5. 上线验收
-- 注册、登录、退出与邮件回调正常。
-- 两个账号之间无法读取或修改彼此的个人资料、项目、成长路径、收藏和学习记录。
-- 创建/编辑/删除数据后刷新页面仍然存在。
-- 知识图谱节点与种子数据正常显示，能力自评可保存并回读。
-- 头像存储策略、移动端布局、浏览器控制台和 Vercel 部署日志无阻断错误。
+### 5. 自动部署与上线验收
+- GitHub `main` 分支有新提交时，EdgeOne Pages 应自动触发新部署。
+- 验证注册、登录、退出和邮件回调。
+- 验证个人资料、项目、成长路径、收藏与学习记录能在刷新后保持。
+- 使用两个不同账号验证 RLS 隔离。
+- 检查作品图片上传、移动端布局、浏览器控制台和 EdgeOne 构建日志。
+- GitHub Actions 成功只代表代码通过自动化检查，不代表已经连接真实 Supabase 或完成线上验收。
 
-注意：仓库 CI 成功只代表代码通过自动化检查，不代表已经连接真实 Supabase、完成生产环境安全验收或正式上线。不要把 Supabase service_role key 放进 `NEXT_PUBLIC_*` 变量或提交到 Git。
+### 6. 安全说明
+浏览器端只使用 Supabase anon / publishable key，并依赖 RLS 控制数据权限。不要将 Supabase `service_role` key 放进 `NEXT_PUBLIC_*` 变量、EdgeOne 前端变量或 Git 仓库。当前项目不需要向浏览器暴露 service role key。
+
+### 7. 备用部署平台
+如 EdgeOne 实际构建日志出现当前项目使用的 Next.js 功能不兼容，可保留现有 Next.js 架构并评估支持 Node.js 的托管平台；不应为通过部署而未经评估地切换为静态导出模式。
 
 ## UI 还原约定
 保留原设计稿的顶部导航、左侧七项菜单、白色背景、紫色强调色、浅色边框、卡片/表格布局、就业趋向气泡图、作品瀑布流与知识图谱双视图。
