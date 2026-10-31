@@ -3,11 +3,12 @@
 面向设计类学生的学习与职业成长平台。以职业探索、成长路径、知识图谱、学习资源、项目实践和作品展示为核心，帮助学生建立可视化、可执行、可追踪的成长闭环。
 
 ## 技术栈
-- Next.js 14 App Router + TypeScript
+- Next.js 15 App Router + TypeScript
 - Tailwind CSS
 - Supabase：PostgreSQL / Auth / Storage（配置后启用）
 - Recharts：数据可视化
 - Vercel：部署
+- npm lockfile：锁定依赖版本，CI 使用 `npm ci` 验证可复现安装
 
 ## 本地运行
 ```bash
@@ -22,7 +23,7 @@ npm run dev
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-不要将真实密钥提交到 Git。浏览器端只使用 anon/publishable key，并依赖 RLS 控制数据权限；`service_role` key 只能放在受保护的服务端环境，当前应用不需要将它暴露给浏览器。
+不要将真实密钥提交到 Git。浏览器端只使用 anon/publishable key，并依赖 RLS 控制数据权限；`service_role` key 只能放在受保护的服务端环境，当前应用不需要将它暴露给浏览器。个人资料表默认仅允许本人读取和修改。
 
 ## Supabase 初始化（新项目）
 在 Supabase Dashboard → SQL Editor 中，按顺序执行以下脚本：
