@@ -24,11 +24,10 @@ drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at before update on public.profiles
  for each row execute procedure public.set_updated_at();
 
--- Only authenticated members can read community profiles; each member edits only their own.
+-- Profile rows contain personal information; the baseline own-profile policy
+-- remains the only read/write path for authenticated users.
 drop policy if exists "profiles are viewable by everyone" on public.profiles;
 drop policy if exists "authenticated profiles are readable" on public.profiles;
-create policy "authenticated profiles are readable" on public.profiles
- for select to authenticated using (true);
 
 create index if not exists idx_learning_paths_user_created on public.learning_paths(user_id,created_at desc);
 create index if not exists idx_path_nodes_path_order on public.path_nodes(path_id,sort_order);
