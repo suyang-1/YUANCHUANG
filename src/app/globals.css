@@ -62,3 +62,42 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .panel:hover { border-color: #E5DDF5; }
 input, textarea, select { color: var(--text-primary); }
 .numeric, .tabular-nums { font-variant-numeric: tabular-nums lining-nums; }
+
+
+/* Subtle motion: keep the interface calm, responsive and accessible. */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes soft-pop {
+  0% { transform: scale(.985); opacity: .7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+main { animation: page-enter .32s ease-out both; }
+.panel {
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.panel:hover {
+  box-shadow: 0 5px 18px rgba(52, 31, 94, .07);
+}
+button:not(:disabled) {
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease,
+    box-shadow .16s ease, transform .16s ease;
+}
+button:not(:disabled):active { transform: scale(.985); }
+.pill { transition: color .16s ease, background-color .16s ease; }
+.pill:hover { background: #ebe5fb; }
+input, textarea, select {
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(132, 84, 245, .10);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
