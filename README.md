@@ -31,6 +31,7 @@ npm run dev
 1. `supabase/migrations/20261030000000_initial_schema.sql`：创建业务表、知识图谱表、基础 RLS 策略和索引。
 2. `supabase/migrations/202610310001_auth_and_storage.sql`：创建用户资料触发器、更新时间触发器、头像存储桶和存储策略。
 3. `supabase/migrations/202610310002_seed_knowledge_graph.sql`：写入知识图谱演示节点与关系。
+4. `supabase/migrations/202610310003_portfolio_storage.sql`：创建作品图片存储桶，并限制上传、更新和删除操作只能作用于当前用户自己的目录。
 
 也可以执行 `supabase/schema.sql` 作为基础结构脚本，再执行第 2、3 步。不要在已经执行完整迁移后再重复执行旧版非迁移脚本；当前 schema 中的策略已加入重复执行保护。
 
@@ -48,7 +49,7 @@ npm run dev
 
 仍以演示内容或静态内容为主的部分：
 - 首页社区动态、推荐岗位及部分统计图表。
-- 作品展示区的作品上传、编辑、公开分享。
+- 作品展示区的作品元数据 CRUD、图片上传、编辑与公开分享（Storage 权限迁移已准备，前端完整接入仍待完成）。
 - 资源社区的真实用户投稿与互动。
 - 部分页面中的推荐案例、图表样例和视觉占位内容。
 
@@ -74,7 +75,7 @@ npm run dev
 4. 点击 Deploy。之后推送到 `main` 的提交会触发生产部署。
 
 ### 4. 绑定自定义域名
-在 Vercel 项目 Settings → Domains 添加你的域名，按 Vercel 显示的记录到域名服务商配置 DNS。等待 Vercel 显示域名验证成功并启用 HTTPS 后，将 Supabase Authentication 的 Site URL 和 Redirect URLs 更新为最终域名。
+在 Vercel 项目 Settings → Domains 添加你的域名，按 Vercel 显示的记录到域名服务商配置 DNS。等待 Vercel 显示域名验证成功并启用 HTTPS 后，将 Supabase Authentication 的 Site URL 和 Redirect URLs 更新为最终域名。若计划使用 `www.yuanchuang.ued.com`，必须先确认你拥有 `ued.com` 的 DNS 管理权限；然后将该完整主机名添加到 Vercel Domains，并严格按 Vercel 页面给出的 DNS 记录配置，不能预先猜测 CNAME 目标。验证成功后再将 Supabase Site URL 设为 `https://www.yuanchuang.ued.com`，并添加 `https://www.yuanchuang.ued.com/auth/callback` 到 Redirect URLs。
 
 ### 5. 上线验收
 - 注册、登录、退出与邮件回调正常。
