@@ -52,29 +52,37 @@ alter table public.resources enable row level security;
 alter table public.projects enable row level security;
 alter table public.learning_records enable row level security;
 alter table public.portfolio_items enable row level security;
-drop policy if exists "profiles are viewable by everyone" on public.profiles;
-create policy "profiles are viewable by everyone" on public.profiles for select using (true);
+drop policy if exists "users manage own profile" on public.profiles;
 drop policy if exists "users manage own profile" on public.profiles;
 create policy "users manage own profile" on public.profiles for all using (auth.uid()=id) with check (auth.uid()=id);
 drop policy if exists "users manage own paths" on public.learning_paths;
+drop policy if exists "users manage own paths" on public.learning_paths;
 create policy "users manage own paths" on public.learning_paths for all using (auth.uid()=user_id) with check (auth.uid()=user_id);
+drop policy if exists "users manage own path nodes" on public.path_nodes;
 drop policy if exists "users manage own path nodes" on public.path_nodes;
 create policy "users manage own path nodes" on public.path_nodes for all using (exists(select 1 from public.learning_paths p where p.id=path_id and p.user_id=auth.uid())) with check (exists(select 1 from public.learning_paths p where p.id=path_id and p.user_id=auth.uid()));
 drop policy if exists "public resources readable" on public.resources;
+drop policy if exists "public resources readable" on public.resources;
 create policy "public resources readable" on public.resources for select using (visibility='public' or owner_id=auth.uid());
+drop policy if exists "users manage own resources" on public.resources;
 drop policy if exists "users manage own resources" on public.resources;
 create policy "users manage own resources" on public.resources for all using (owner_id=auth.uid()) with check (owner_id=auth.uid());
 drop policy if exists "users manage own projects" on public.projects;
+drop policy if exists "users manage own projects" on public.projects;
 create policy "users manage own projects" on public.projects for all using (owner_id=auth.uid()) with check (owner_id=auth.uid());
+drop policy if exists "users manage own learning records" on public.learning_records;
 drop policy if exists "users manage own learning records" on public.learning_records;
 create policy "users manage own learning records" on public.learning_records for all using (user_id=auth.uid()) with check (user_id=auth.uid());
 drop policy if exists "public portfolios readable" on public.portfolio_items;
+drop policy if exists "public portfolios readable" on public.portfolio_items;
 create policy "public portfolios readable" on public.portfolio_items for select using (true);
+drop policy if exists "users manage own portfolio" on public.portfolio_items;
 drop policy if exists "users manage own portfolio" on public.portfolio_items;
 create policy "users manage own portfolio" on public.portfolio_items for all using (owner_id=auth.uid()) with check (owner_id=auth.uid());
 
 -- Career direction catalogue is public; personal plans remain user-scoped.
 alter table public.career_directions enable row level security;
+drop policy if exists "career directions are publicly readable" on public.career_directions;
 drop policy if exists "career directions are publicly readable" on public.career_directions;
 drop policy if exists "career directions are publicly readable" on public.career_directions;
 create policy "career directions are publicly readable"
@@ -121,14 +129,16 @@ alter table public.knowledge_edges enable row level security;
 alter table public.skill_assessments enable row level security;
 drop policy if exists "knowledge nodes are readable" on public.knowledge_nodes;
 drop policy if exists "knowledge nodes are readable" on public.knowledge_nodes;
+drop policy if exists "knowledge nodes are readable" on public.knowledge_nodes;
 create policy "knowledge nodes are readable" on public.knowledge_nodes for select using (true);
 drop policy if exists "knowledge edges are readable" on public.knowledge_edges;
 drop policy if exists "knowledge edges are readable" on public.knowledge_edges;
+drop policy if exists "knowledge edges are readable" on public.knowledge_edges;
 create policy "knowledge edges are readable" on public.knowledge_edges for select using (true);
+drop policy if exists "users manage own skill assessments" on public.skill_assessments;
 drop policy if exists "users manage own skill assessments" on public.skill_assessments;
 drop policy if exists "users manage own skill assessments" on public.skill_assessments;
 create policy "users manage own skill assessments" on public.skill_assessments for all
  using (auth.uid()=user_id) with check (auth.uid()=user_id);
 create index if not exists idx_skill_assessments_user on public.skill_assessments(user_id);
 create index if not exists idx_knowledge_edges_source on public.knowledge_edges(source_node_id);
-
