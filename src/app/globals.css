@@ -50,3 +50,15 @@ input::placeholder, textarea::placeholder { color: var(--text-disabled); }
   border-bottom: 1px solid #F1EFF4; font-size: 12px; color: var(--text-body);
 }
 .table-row:last-child { border-bottom: 0; }
+
+/* Shared interaction states aligned with the supplied design system. */
+a, button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+button:disabled { cursor: not-allowed; opacity: .55; }
+.panel, .pill, button, input, textarea, select { transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }
+.panel:hover { border-color: #E5DDF5; }
+input, textarea, select { color: var(--text-primary); }
+.numeric, .tabular-nums { font-variant-numeric: tabular-nums lining-nums; }
