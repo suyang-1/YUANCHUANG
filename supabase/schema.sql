@@ -49,8 +49,6 @@ alter table public.resources enable row level security;
 alter table public.projects enable row level security;
 alter table public.learning_records enable row level security;
 alter table public.portfolio_items enable row level security;
-drop policy if exists "profiles are viewable by everyone" on public.profiles;
-create policy "profiles are viewable by everyone" on public.profiles for select using (true);
 drop policy if exists "users manage own profile" on public.profiles;
 create policy "users manage own profile" on public.profiles for all using (auth.uid()=id) with check (auth.uid()=id);
 drop policy if exists "users manage own paths" on public.learning_paths;
