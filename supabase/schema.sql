@@ -59,3 +59,17 @@ create policy "users manage own projects" on public.projects for all using (owne
 create policy "users manage own learning records" on public.learning_records for all using (user_id=auth.uid()) with check (user_id=auth.uid());
 create policy "public portfolios readable" on public.portfolio_items for select using (true);
 create policy "users manage own portfolio" on public.portfolio_items for all using (owner_id=auth.uid()) with check (owner_id=auth.uid());
+
+-- Career direction catalogue is public; personal plans remain user-scoped.
+alter table public.career_directions enable row level security;
+drop policy if exists "career directions are publicly readable" on public.career_directions;
+create policy "career directions are publicly readable"
+  on public.career_directions for select using (true);
+
+-- Add integrity constraints without changing existing user data.
+alter table public.learning_paths
+  add column if not exists target_date date,
+  add column if not exists progress numeric(5,2) not null default 0;
+alter table public.path_nodes
+  add column if not exists estimated_minutes int not null default 60,
+  add column if not exists resource_url text;
