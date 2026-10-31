@@ -73,3 +73,44 @@ alter table public.learning_paths
 alter table public.path_nodes
   add column if not exists estimated_minutes int not null default 60,
   add column if not exists resource_url text;
+
+
+-- Knowledge graph catalogue and user-owned competency self-assessments.
+create table if not exists public.knowledge_nodes (
+ id uuid primary key default gen_random_uuid(),
+ slug text not null unique,
+ title text not null,
+ category text not null,
+ description text,
+ difficulty smallint not null default 1 check (difficulty between 1 and 5),
+ created_at timestamptz not null default now()
+);
+create table if not exists public.knowledge_edges (
+ id uuid primary key default gen_random_uuid(),
+ source_node_id uuid not null references public.knowledge_nodes(id) on delete cascade,
+ target_node_id uuid not null references public.knowledge_nodes(id) on delete cascade,
+ relation_type text not null default 'related',
+ unique(source_node_id,target_node_id,relation_type),
+ check(source_node_id <> target_node_id)
+);
+create table if not exists public.skill_assessments (
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ knowledge_node_id uuid not null references public.knowledge_nodes(id) on delete cascade,
+ self_rating smallint not null check(self_rating between 1 and 5),
+ note text,
+ assessed_at timestamptz not null default now(),
+ unique(user_id,knowledge_node_id)
+);
+alter table public.knowledge_nodes enable row level security;
+alter table public.knowledge_edges enable row level security;
+alter table public.skill_assessments enable row level security;
+drop policy if exists "knowledge nodes are readable" on public.knowledge_nodes;
+create policy "knowledge nodes are readable" on public.knowledge_nodes for select using (true);
+drop policy if exists "knowledge edges are readable" on public.knowledge_edges;
+create policy "knowledge edges are readable" on public.knowledge_edges for select using (true);
+drop policy if exists "users manage own skill assessments" on public.skill_assessments;
+create policy "users manage own skill assessments" on public.skill_assessments for all
+ using (auth.uid()=user_id) with check (auth.uid()=user_id);
+create index if not exists idx_skill_assessments_user on public.skill_assessments(user_id);
+create index if not exists idx_knowledge_edges_source on public.knowledge_edges(source_node_id);
