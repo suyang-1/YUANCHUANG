@@ -129,6 +129,85 @@ function CareerPlanner({notify}:{notify:(s:string)=>void}){
  </div>;
 }
 
+
+function CommunityFeed({notify,onCompose}:{notify:(s:string)=>void;onCompose:()=>void}){
+ const [items,setItems]=useState<any[]>([]);
+ const [loading,setLoading]=useState(true);
+ const [userId,setUserId]=useState<string|null>(null);
+ const [liked,setLiked]=useState<string[]>([]);
+ const [following,setFollowing]=useState<string[]>([]);
+ const [commentOpen,setCommentOpen]=useState<string|null>(null);
+ const [comments,setComments]=useState<Record<string,any[]>>({});
+ const [commentDraft,setCommentDraft]=useState("");
+ const [busy,setBusy]=useState<string|null>(null);
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+ const load=async()=>{
+  if(!url||!key){setLoading(false);return;}
+  const db=createBrowserClient(url,key);
+  const {data:{user}}=await db.auth.getUser();
+  if(!user){setLoading(false);return;}
+  setUserId(user.id);
+  const {data:posts,error}=await db.from("community_posts").select("id,author_id,title,body,category,created_at").order("created_at",{ascending:false}).limit(30);
+  if(error){notify("社区动态读取失败："+error.message);setLoading(false);return;}
+  const rows=posts??[];
+  const ids=[...new Set(rows.map((p:any)=>p.author_id))];
+  const [{data:profiles},{data:likes},{data:follows},{data:allComments}] = await Promise.all([
+   ids.length?db.from("profiles").select("id,display_name,account_type,major").in("id",ids):Promise.resolve({data:[]}),
+   db.from("community_likes").select("post_id").eq("user_id",user.id),
+   db.from("user_follows").select("following_id").eq("follower_id",user.id),
+   rows.length?db.from("community_comments").select("post_id").in("post_id",rows.map((p:any)=>p.id)):Promise.resolve({data:[]})
+  ]);
+  const profileMap=new Map((profiles??[]).map((p:any)=>[p.id,p]));
+  const likeRows=likes??[];
+  const commentRows=allComments??[];
+  setLiked(likeRows.map((x:any)=>x.post_id));setFollowing((follows??[]).map((x:any)=>x.following_id));
+  setItems(rows.map((p:any)=>({...p,author:profileMap.get(p.author_id),like_count:0,comment_count:commentRows.filter((c:any)=>c.post_id===p.id).length})).map((p:any)=>({...p,like_count:0})));
+  const counts=new Map<string,number>();
+  if(rows.length){const {data:postLikes}=await db.from("community_likes").select("post_id").in("post_id",rows.map((p:any)=>p.id));(postLikes??[]).forEach((x:any)=>counts.set(x.post_id,(counts.get(x.post_id)??0)+1));}
+  setItems(rows.map((p:any)=>({...p,author:profileMap.get(p.author_id),like_count:counts.get(p.id)??0,comment_count:commentRows.filter((c:any)=>c.post_id===p.id).length})));
+  setLoading(false);
+ };
+ useEffect(()=>{void load();},[]);
+ const toggleLike=async(post:any)=>{
+  if(!url||!key||!userId){notify("请先登录并连接 Supabase");return;}
+  const db=createBrowserClient(url,key),has=liked.includes(post.id);
+  setBusy(post.id);
+  const result=has?await db.from("community_likes").delete().eq("post_id",post.id).eq("user_id",userId):await db.from("community_likes").insert({post_id:post.id,user_id:userId});
+  if(result.error)notify("点赞操作失败："+result.error.message);
+  else{setLiked(prev=>has?prev.filter(x=>x!==post.id):[...prev,post.id]);setItems(prev=>prev.map(x=>x.id===post.id?{...x,like_count:Math.max(0,x.like_count+(has?-1:1))}:x));}
+  setBusy(null);
+ };
+ const toggleComments=async(post:any)=>{
+  if(commentOpen===post.id){setCommentOpen(null);return;}
+  setCommentOpen(post.id);
+  if(!url||!key)return;
+  const db=createBrowserClient(url,key);
+  const {data,error}=await db.from("community_comments").select("id,author_id,body,created_at").eq("post_id",post.id).order("created_at",{ascending:true});
+  if(error){notify("评论读取失败："+error.message);return;}
+  const ids=[...new Set((data??[]).map((x:any)=>x.author_id))];
+  const {data:profiles}=ids.length?await db.from("profiles").select("id,display_name").in("id",ids):{data:[]};
+  const names=new Map((profiles??[]).map((p:any)=>[p.id,p.display_name]));
+  setComments(prev=>({...prev,[post.id]:(data??[]).map((x:any)=>({...x,author:names.get(x.author_id)??"设计学习者"}))}));
+ };
+ const sendComment=async(post:any)=>{
+  if(!url||!key||!userId||!commentDraft.trim()){notify("请登录后填写评论");return;}
+  const db=createBrowserClient(url,key);
+  const {error}=await db.from("community_comments").insert({post_id:post.id,author_id:userId,body:commentDraft.trim()});
+  if(error){notify("评论发布失败："+error.message);return;}
+  setCommentDraft("");await toggleComments({...post,id:""});setCommentOpen(post.id);await load();
+  const {data}=await db.from("community_comments").select("id,author_id,body,created_at").eq("post_id",post.id).order("created_at");
+  const {data:me}=await db.from("profiles").select("display_name").eq("id",userId).maybeSingle();
+  setComments(prev=>({...prev,[post.id]:(data??[]).map((x:any)=>({...x,author:x.author_id===userId?me?.display_name??"我":"社区成员"}))}));
+ };
+ const toggleFollow=async(authorId:string)=>{
+  if(!url||!key||!userId||authorId===userId)return;
+  const db=createBrowserClient(url,key),has=following.includes(authorId);
+  const result=has?await db.from("user_follows").delete().eq("follower_id",userId).eq("following_id",authorId):await db.from("user_follows").insert({follower_id:userId,following_id:authorId});
+  if(result.error)notify("关注操作失败："+result.error.message);else setFollowing(prev=>has?prev.filter(x=>x!==authorId):[...prev,authorId]);
+ };
+ return <CommunityFeed notify={notify} onCompose={()=>setShowNew(true)}/>;
+}
+
 export default function Home(){
  const [accountEmail,setAccountEmail]=useState("");
  const [profile,setProfile]=useState({display_name:"设计学习者",account_type:"student" as "student"|"teacher",major:"",school:"",grade:"",career_goal:"",bio:"",is_public:false});const [profileEditing,setProfileEditing]=useState(false);const [profileSaving,setProfileSaving]=useState(false);const [profileDraft,setProfileDraft]=useState({display_name:"设计学习者",account_type:"student" as "student"|"teacher",major:"",school:"",grade:"",career_goal:"",bio:"",is_public:false});
