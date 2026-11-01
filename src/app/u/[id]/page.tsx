@@ -34,7 +34,7 @@ export default function PublicProfilePage(){
      const marker="/storage/v1/object/";
      const markerIndex=pathname.indexOf(marker);
      if(markerIndex<0)return item;
-     const objectPath=decodeURIComponent(pathname.slice(markerIndex+marker.length).replace(/^(public|sign)\\/portfolio\\//,""));
+     const objectPath=decodeURIComponent(pathname.slice(markerIndex+marker.length).replace(/^(public|sign)\/portfolio\//,""));
      const {data:signedData,error:signedError}=await supabase.storage.from("portfolio").createSignedUrl(objectPath,3600);
      if(signedError||!signedData?.signedUrl)return {...item,cover_url:null};
      return {...item,cover_url:signedData.signedUrl};
