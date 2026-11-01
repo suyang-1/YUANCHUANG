@@ -37,7 +37,7 @@ npm run dev
 7. `supabase/migrations/202611010001_private_portfolio_storage.sql`：将作品图片存储桶改为私有，并通过 Storage RLS 限制读取；公开作品图片由页面生成 1 小时有效的签名 URL。
 8. `supabase/migrations/202611010002_community_core.sql`：创建社区文章、评论、点赞和关注关系表，设置用户归属 RLS，并从用户资料生成社区展示名。
 
-也可以执行 `supabase/schema.sql` 作为基础结构脚本，再执行第 2 至 6 步。不要在已经执行完整迁移后再重复执行旧版非迁移脚本；当前 schema 中的策略已加入重复执行保护。
+也可以执行 `supabase/schema.sql` 作为基础结构脚本，再执行第 2 至 8 步。不要在已经执行完整迁移后再重复执行旧版非迁移脚本；当前 schema 中的策略已加入重复执行保护。
 
 迁移脚本可重复执行。若数据库已有业务数据，执行前仍建议先备份。执行后可在 Supabase Table Editor 检查表结构和种子数据。仓库 CI 只验证代码类型和生产构建，不会连接或修改你的 Supabase 项目。
 
