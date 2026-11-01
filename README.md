@@ -26,7 +26,7 @@ npm run dev
 不要将真实密钥提交到 Git。浏览器端只使用 anon/publishable key，并依赖 RLS 控制数据权限；`service_role` key 只能放在受保护的服务端环境，当前应用不需要将它暴露给浏览器。个人资料表默认仅允许本人读取和修改。
 
 ## Supabase 初始化（新项目）
-在 Supabase Dashboard → SQL Editor 中，按顺序执行以下脚本（所有 7 份迁移都要执行）：
+在 Supabase Dashboard → SQL Editor 中，按顺序执行以下脚本（所有 8 份迁移都要执行）：
 
 1. `supabase/migrations/20261030000000_initial_schema.sql`：创建业务表、知识图谱表、基础 RLS 策略和索引。
 2. `supabase/migrations/202610310001_auth_and_storage.sql`：创建用户资料触发器、更新时间触发器、头像存储桶和存储策略。
@@ -35,6 +35,7 @@ npm run dev
 5. `supabase/migrations/202610310004_profile_identity.sql`：增加账号身份字段（学生 / 教师），并让注册资料触发器保存身份与学生专业。
 6. `supabase/migrations/202610310005_profile_portfolio_privacy.sql`：增加个人主页和作品条目的公开开关，默认保持私有，仅主动公开的资料可被其他访客读取。
 7. `supabase/migrations/202611010001_private_portfolio_storage.sql`：将作品图片存储桶改为私有，并通过 Storage RLS 限制读取；公开作品图片由页面生成 1 小时有效的签名 URL。
+8. `supabase/migrations/202611010002_community_core.sql`：创建社区文章、评论、点赞和关注关系表，设置用户归属 RLS，并从用户资料生成社区展示名。
 
 也可以执行 `supabase/schema.sql` 作为基础结构脚本，再执行第 2 至 6 步。不要在已经执行完整迁移后再重复执行旧版非迁移脚本；当前 schema 中的策略已加入重复执行保护。
 
@@ -51,9 +52,9 @@ npm run dev
 - 学习记录：学习主题、类型、时长和备注记录。
 
 仍以演示内容或静态内容为主的部分：
-- 首页社区动态、推荐岗位及部分统计图表。
+- 首页推荐岗位及部分统计图表。社区动态已接入真实文章、评论、点赞和关注；需要完成第 8 份迁移并配置 Supabase 后启用。
 - 作品展示区：个人作品元数据新增、编辑、删除与封面图片上传；更新或删除作品时会尝试清理旧封面文件，图片仅允许当前账号目录写入。作品图片存储桶使用私有读取；只有作品条目已公开时，访客才能获取对应封面的短时签名 URL。私有作品封面仅作品所有者可读取。
-- 资源社区的真实用户投稿与互动。
+- 资源库的真实用户投稿与互动管理。
 - 部分页面中的推荐案例、图表样例和视觉占位内容。
 
 未配置 Supabase 时，应用保留演示模式；演示模式中的本地状态不会跨设备持久化。GitHub Actions 负责依赖审计、TypeScript 类型检查和 Next.js 生产构建，不会代替真实 Supabase 项目验证。
@@ -62,7 +63,7 @@ npm run dev
 
 ### 1. 部署前准备
 - 一个腾讯云账号，并已开通 EdgeOne Pages / EdgeOne Makers。
-- 一个 Supabase 项目，已按上方顺序执行全部 6 份迁移。
+- 一个 Supabase 项目，已按上方顺序执行全部 8 份迁移。
 - GitHub 仓库访问授权。
 - Supabase 公共环境变量：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`。
 - 如需使用 `www.yuanchuang.ued.com`，还需要拥有 `ued.com` 的 DNS 管理权限，或请域名管理员代为添加记录。
