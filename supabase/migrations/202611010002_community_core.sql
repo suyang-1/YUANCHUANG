@@ -59,3 +59,7 @@ create index if not exists idx_community_posts_author on public.community_posts(
 create index if not exists idx_community_comments_post on public.community_comments(post_id,created_at);
 create index if not exists idx_community_likes_user on public.community_likes(user_id);
 create index if not exists idx_user_follows_following on public.user_follows(following_id);
+
+-- Public community identity is a per-post snapshot, not permission to expose private profiles.
+alter table public.community_posts add column if not exists author_name text not null default '设计学习者';
+alter table public.community_comments add column if not exists author_name text not null default '设计学习者';
