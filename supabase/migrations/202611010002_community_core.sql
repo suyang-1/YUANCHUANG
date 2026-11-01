@@ -63,3 +63,29 @@ create index if not exists idx_user_follows_following on public.user_follows(fol
 -- Public community identity is a per-post snapshot, not permission to expose private profiles.
 alter table public.community_posts add column if not exists author_name text not null default '设计学习者';
 alter table public.community_comments add column if not exists author_name text not null default '设计学习者';
+
+create or replace function public.set_community_author_name()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  select coalesce(display_name, '设计学习者')
+    into new.author_name
+    from public.profiles
+    where id = new.author_id;
+  if new.author_name is null then
+    new.author_name := '设计学习者';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_posts_author_name on public.community_posts;
+create trigger community_posts_author_name
+before insert or update of author_id on public.community_posts
+for each row execute function public.set_community_author_name();
+drop trigger if exists community_comments_author_name on public.community_comments;
+create trigger community_comments_author_name
+before insert or update of author_id on public.community_comments
+for each row execute function public.set_community_author_name();
