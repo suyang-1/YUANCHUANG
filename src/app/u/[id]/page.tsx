@@ -26,7 +26,21 @@ export default function PublicProfilePage(){
    setProfile(profileData as PublicProfile);
    const {data:portfolioData}=await supabase.from("portfolio_items").select("id,title,description,cover_url,tags,created_at").eq("owner_id",params.id).eq("is_public",true).order("created_at",{ascending:false});
    if(!active)return;
-   setItems((portfolioData??[]) as PortfolioItem[]);
+   const visibleItems=(portfolioData??[]) as PortfolioItem[];
+   const itemsWithSignedCovers=await Promise.all(visibleItems.map(async item=>{
+    if(!item.cover_url)return item;
+    try{
+     const pathname=new URL(item.cover_url).pathname;
+     const marker="/storage/v1/object/";
+     const markerIndex=pathname.indexOf(marker);
+     if(markerIndex<0)return item;
+     const objectPath=decodeURIComponent(pathname.slice(markerIndex+marker.length).replace(/^public\\//,"").replace(/^sign\\//,""));
+     const {data:signedData,error:signedError}=await supabase.storage.from("portfolio").createSignedUrl(objectPath,3600);
+     if(signedError||!signedData?.signedUrl)return {...item,cover_url:null};
+     return {...item,cover_url:signedData.signedUrl};
+    }catch{return {...item,cover_url:null};}
+   }));
+   setItems(itemsWithSignedCovers);
    setLoading(false);
   })();
   return()=>{active=false;};
